@@ -128,17 +128,18 @@ namespace dsl_compiler{
                 //boost::apply_visitor( ctx , stmt );
                 //return ctx.compile();
         //}
-        template<class Stmt, class = void_t< decltype( detail_::make_stmt_(std::declval<Stmt&>()) ) > >
+        template<class Stmt, class = void_t< decltype( detail_::make_stmt_impl_(std::declval<Stmt&>()) ) > >
         program compile( Stmt const& stmt){
-                auto _stmt = detail_::make_stmt_(stmt);
+                auto _stmt = detail_::make_stmt_impl_(stmt);
                 detail_::compiler_ ctx;
                 boost::apply_visitor( ctx , _stmt );
                 return ctx.compile();
         }
-        inline
-        program debug_compile( statement::impl_t const& stmt ){
+        template<class Stmt, class = void_t< decltype( detail_::make_stmt_impl_(std::declval<Stmt&>()) ) > >
+        program debug_compile( Stmt const& stmt ){
+                auto _stmt = detail_::make_stmt_impl_(stmt);
                 detail_::compiler_ ctx;
-                boost::apply_visitor( ctx , stmt );
+                boost::apply_visitor( ctx , _stmt );
                 ctx.debug();
                 return ctx.compile();
         }
