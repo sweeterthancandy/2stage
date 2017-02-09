@@ -13,6 +13,7 @@ DSL_COMPILER_make_tags(
         (stmts)
         (expr)
         (push)
+        (return_)
 )
 
 namespace dsl_compiler{
@@ -28,6 +29,7 @@ namespace dsl_compiler{
              , std::tuple< tag::stmts, std::vector< boost::recursive_variant_> >
              , std::tuple< tag::expr, expression >
              , std::tuple< tag::push, expression >
+             , std::tuple< tag::return_, expression >
         >::type;
 
         // this is the pretty dsl object, the only reason for this 
@@ -43,6 +45,7 @@ namespace dsl_compiler{
                 statement(std::tuple< tag::stmts, std::vector< statement_impl_t> > const& arg):impl_(arg){}
                 statement(std::tuple< tag::expr, expression > const& arg):impl_(arg){}
                 statement(std::tuple< tag::push, expression > const& arg):impl_(arg){}
+                statement(std::tuple< tag::return_, expression > const& arg):impl_(arg){}
                 //statement(statement_impl_t impl):impl_(std::move(impl)){}
                 statement(statement const& stmt)=default;
                 statement(statement&& stmt)=default;
@@ -143,6 +146,16 @@ namespace dsl_compiler{
         statement expr( Expr const& _expr){
                 return std::make_tuple(
                         tag::_expr
+                      , detail_::make_expr_( _expr )
+                );
+        }
+        template<
+                class Expr
+              , class = void_t< decltype( detail_::make_expr_( std::declval<Expr&>() ) ) >
+        >
+        statement return_( Expr const& _expr){
+                return std::make_tuple(
+                        tag::_return_
                       , detail_::make_expr_( _expr )
                 );
         }

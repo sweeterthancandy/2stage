@@ -113,10 +113,21 @@ namespace dsl_compiler{
                         void operator()(std::tuple<tag::push, Args...> const& arg){
                                 ctx_.emit_push( std::get<1>(arg) );
                         }
+                        template<class... Args>
+                        void operator()(std::tuple<tag::return_, Args...> const& arg){
+                                ctx_.emit_return( std::get<1>(arg), std::get<2>(arg) );
+                        }
                         void debug()const{
                                 ctx_.debug();
                         }
-                        auto compile(){return ctx_.compile();}
+                        template<class Stmt, class = void_t<decltype( make_stmt_impl_( std::declval<Stmt&>() ) )> >
+                        auto compile(statement const& stmt){
+                                auto si{make_stmt_impl_(stmt)};
+                                ctx_.begin_function_context();
+                                boost::apply_visitor( *this , si);
+                                ctx_.end_placeholder_context();
+                                return ctx_.compile();
+                        }
                 private:
                         compiler_contex ctx_;
                 };
@@ -132,16 +143,17 @@ namespace dsl_compiler{
         program compile( Stmt const& stmt){
                 auto _stmt = detail_::make_stmt_impl_(stmt);
                 detail_::compiler_ ctx;
-                boost::apply_visitor( ctx , _stmt );
-                return ctx.compile();
+                auto tmp{ctx.compile(_stmt)};
+                return tmp;
         }
         template<class Stmt, class = void_t< decltype( detail_::make_stmt_impl_(std::declval<Stmt&>()) ) > >
         program debug_compile( Stmt const& stmt ){
                 auto _stmt = detail_::make_stmt_impl_(stmt);
                 detail_::compiler_ ctx;
-                boost::apply_visitor( ctx , _stmt );
+                auto tmp{ctx.compile(_stmt)};
+                //boost::apply_visitor( ctx , _stmt );
                 ctx.debug();
-                return ctx.compile();
+                return tmp;
         }
         
         template<class... Integer>
