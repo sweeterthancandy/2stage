@@ -1,5 +1,7 @@
 #pragma once
 
+#include "boost/preprocessor.hpp"
+
 #include "funamental.h"
 #include "expr.h"
 #include "expr_dsl.h"
