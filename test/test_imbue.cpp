@@ -12,12 +12,10 @@ namespace{
         using ImbueTest = BasicCtxFixture<struct tag_test_dsl>;
 
         TEST_F( ImbueTest, simple){
-                ( if_(false_)[
-                        _1 = 1
-                  ].else_[
-                        _1 =2
-                  ] )();
-        }
 
+                if_(false_)[
+                        _1 = 1
+                ]
+        }
 
 }
