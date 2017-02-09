@@ -143,4 +143,12 @@ namespace dsl_compiler{
                 ctx.debug();
                 return ctx.compile();
         }
+        
+        template<class... Integer>
+        void statement::operator()(Integer... values){
+                auto prog = debug_compile(impl_);
+                context ctx;
+                prog.execute(ctx);
+                ctx.debug();
+        }
 }

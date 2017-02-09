@@ -48,6 +48,9 @@ namespace dsl_compiler{
                 statement(statement&& stmt)=default;
 
                 statement_impl_t to_stmt_impl_t_()const{ return impl_; }
+
+                template<class... Integer>
+                void operator()(Integer... values);
         private:
                 statement_impl_t impl_;
         };
