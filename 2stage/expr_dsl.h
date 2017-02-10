@@ -155,6 +155,26 @@ namespace dsl_compiler{
                                         )
                                 };
                         }
+                        template<
+                                class Param
+                              , class _tag = Tag
+                              , class = void_t<
+                                        std::enable_if_t<std::is_same< _tag, tag_l_value>::value>
+                                      , decltype( make_expr_impl_( operator+(
+                                                        std::declval<meta_information&>()
+                                                      , std::declval<Param&>() ) ) )
+                                >
+                        >
+                        meta_information<tag_l_value>
+                        operator*=(Param const& param){
+                                return meta_information<tag_l_value>{
+                                        std::make_tuple(
+                                                tag::_assign
+                                              , impl_
+                                              , make_expr_impl_(operator*(*this,param))
+                                        )
+                                };
+                        }
                         
                         meta_information<tag_r_value> operator!()const{
                                 return meta_information<tag_r_value>{
