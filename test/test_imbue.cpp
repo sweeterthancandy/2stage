@@ -35,4 +35,16 @@ namespace{
                         )();
                 ASSERT_EQ( 1024,static_cast<int>(ret));
         }
+        
+        TEST_F(ImbueTest, args){
+                auto ret =
+                        (_2 = 1,
+                        for_( _1 = 0, _1 != 10, _1+=1)
+                        [
+                                _2 *= 2
+                        ],
+                        return_(_2)
+                        )();
+                ASSERT_EQ( 1024,static_cast<int>(ret));
+        }
 }

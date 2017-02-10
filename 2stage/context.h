@@ -14,8 +14,22 @@
 #include "funamental.h"
 
 namespace dsl_compiler{
+
+        template<class N>
+        struct tag_dsl_compiler_arg{};
+
+
+
+
+
         struct context{
-                context():return_(0){}
+                template<class... Args>
+                context(Args&&... args)
+                        :return_(0)
+                {
+
+
+                }
                 decltype(auto) get(boost::typeindex::type_index const& id){
                         if( m_.count( id ) == 0 ){
                                 BOOST_THROW_EXCEPTION(std::domain_error("register doesn't exist!"));

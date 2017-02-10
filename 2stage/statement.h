@@ -52,8 +52,8 @@ namespace dsl_compiler{
 
                 statement_impl_t to_stmt_impl_t_()const{ return impl_; }
 
-                template<class... Integer>
-                funamental_t operator()(Integer... values);
+                template<class... Args>
+                funamental_t operator()(Args&&... args);
         private:
                 statement_impl_t impl_;
         };

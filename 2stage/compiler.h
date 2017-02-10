@@ -157,10 +157,13 @@ namespace dsl_compiler{
                 return tmp;
         }
         
-        template<class... Integer>
-        funamental_t statement::operator()(Integer... values){
+        template<class... Args
+                //, class = void_t< decltype( funamental_t{std::declval<Args>}...)>
+        >
+        funamental_t statement::operator()(Args&&... args)
+        {
                 auto prog = debug_compile(impl_);
-                context ctx;
+                context ctx(std::forward<Args>(args)...);
                 prog.execute(ctx);
                 return ctx.get_return();
         }
