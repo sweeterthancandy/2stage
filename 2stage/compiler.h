@@ -158,10 +158,10 @@ namespace dsl_compiler{
         }
         
         template<class... Integer>
-        void statement::operator()(Integer... values){
+        funamental_t statement::operator()(Integer... values){
                 auto prog = debug_compile(impl_);
                 context ctx;
                 prog.execute(ctx);
-                ctx.debug();
+                return ctx.get_return();
         }
 }
