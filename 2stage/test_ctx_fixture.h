@@ -2,6 +2,7 @@
 
 #include "context.h"
 #include "placeholders.h"
+#include "eval.h"
 #include <gtest/gtest.h>
 
 

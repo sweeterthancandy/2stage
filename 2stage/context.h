@@ -15,6 +15,7 @@
 
 namespace dsl_compiler{
         struct context{
+                context():return_(0){}
                 decltype(auto) get(boost::typeindex::type_index const& id){
                         if( m_.count( id ) == 0 ){
                                 BOOST_THROW_EXCEPTION(std::domain_error("register doesn't exist!"));
@@ -31,6 +32,10 @@ namespace dsl_compiler{
                 void push(funamental_t const& val){
                         stack_.emplace_back( val );
                 }
+                void set_return(funamental_t const& val){
+                        return_ = val;
+                }
+                int get_return()const{ return return_; }
                 void debug()const{
                         std::cout << "{";
                         boost::for_each( m_, [&](auto&& p){ 
@@ -54,5 +59,6 @@ namespace dsl_compiler{
         private:
                 std::map<boost::typeindex::type_index,funamental_t> m_;
                 std::vector<funamental_t> stack_;
+                funamental_t return_;
         };
 }

@@ -24,6 +24,7 @@ namespace dsl_compiler{
                      , std::tuple< tag::goto_, size_t >
                      , std::tuple< tag::expr, expression >
                      , std::tuple< tag::push, expression >
+                     , std::tuple< tag::return_, size_t, expression >
                 >;
 
                 struct to_string_ : boost::static_visitor<std::string>
@@ -39,6 +40,9 @@ namespace dsl_compiler{
                        }
                        result_type operator()(std::tuple< tag::push, expression > const& arg)const{
                                return str(boost::format("push(%s)") % std::get<1>(arg) );
+                       }
+                       result_type operator()(std::tuple< tag::return_, size_t, expression > const& arg)const{
+                               return str(boost::format("return_(%s,%s)") % std::get<1>(arg) % std::get<2>(arg));
                        }
                 };
 
@@ -83,6 +87,11 @@ namespace dsl_compiler{
                        ctx_.push( std::move( result ) );
                        exe_ctx_.next();
                }
+               void operator()(std::tuple<tag::return_, size_t, expression> const& arg)const{
+                       auto result = std::get<2>(arg).eval(ctx_);
+                       ctx_.set_return(result);
+                       exe_ctx_.set( std::get<1>(arg) );
+               }
         private:
                context& ctx_;
                execution_context& exe_ctx_;
@@ -118,4 +127,7 @@ namespace dsl_compiler{
         private:
                 std::vector< backend_statement::impl_t > prog_;
         };
+
+
+
 }

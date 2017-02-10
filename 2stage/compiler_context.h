@@ -3,22 +3,38 @@
 namespace dsl_compiler{
 
         namespace detail_{
+
+
+
                 struct placeholder_context{
                 private:
                         enum class ctx_type{
                                 regular
                               , breakable
+                              , function
                         };
-                        using map_t = std::map<size_t,size_t>;
+                        static const char* ctx_type_to_string(ctx_type type) {
+                          switch (type) {
+                          case ctx_type::regular:
+                            return "regular";
+                          case ctx_type::breakable:
+                            return "breakable";
+                          case ctx_type::function:
+                            return "function";
+                          default:
+                            return "";
+                          }
+                        }
+
+                        using map_t = std::map<size_t, size_t>;
                         using internal_ctx_t = std::tuple<ctx_type, map_t  >;
                 public:
 
 
                         placeholder_context(){
-                                push_regular();
                         }
                         ~placeholder_context(){
-                                assert( stack_.size() == 1 && "inconsistnet push/pop");
+                                assert( stack_.size() == 0 && "inconsistnet push/pop");
                         }
                         void push_regular(){
                                 stack_.emplace_back(ctx_type::regular, map_t{});
@@ -28,6 +44,10 @@ namespace dsl_compiler{
                                 map_placeholder_ctx_( stack_.back(), break_placeholder() );
                                 map_placeholder_ctx_( stack_.back(), continue_placeholder() );
                         }
+                        void push_function(){
+                                stack_.emplace_back(ctx_type::function, map_t{});
+                                map_placeholder_ctx_( stack_.back(), return_placeholder() );
+                        }
                         
                         void pop(){
                                 stack_.pop_back();
@@ -35,10 +55,14 @@ namespace dsl_compiler{
 
                         constexpr size_t break_placeholder()const{return -1;}
                         constexpr size_t continue_placeholder()const{return -2;}
+                        constexpr size_t return_placeholder()const{return -3;}
 
                         size_t map_placeholder(size_t idx){
                                 assert( idx != break_placeholder() && "can't map to break");
                                 return map_placeholder_ctx_( stack_.back() , idx );
+                        }
+                        size_t map_return(){
+                                return map_placeholder_ctx_( stack_.front() , return_placeholder() );
                         }
                         // the only difference is that it maps to the closest breakable context rather than the top
                         size_t map_break(){
@@ -61,13 +85,10 @@ namespace dsl_compiler{
                                 }
                                 BOOST_THROW_EXCEPTION(std::domain_error("continue outside breakable context"));
                         }
-
                         void debug_()const{
                                 for(size_t i=0;i!=stack_.size();++i){
                                         auto const& ctx = stack_[i];
-                                        std::cout << boost::format("%-2s %10s ") % i % 
-                                                ( std::get<0>(ctx) == ctx_type::regular ?
-                                                  "regular" : "breakable" );
+                                        std::cout << boost::format("%-2s %10s ") % i % ctx_type_to_string(std::get<0>(ctx));
                                         boost::for_each( std::get<1>(stack_[i]), [](auto&& p){ 
                                                 std::cout << boost::format("(%s=>%s),") % p.first % p.second;
                                         });
@@ -96,9 +117,12 @@ namespace dsl_compiler{
                         struct tag_break{};
                         struct tag_continue{};
                         struct tag_push{};
+                        struct tag_return{};
 
 
                         using inter_t = boost::variant<
+                                // expression may have side effects 
+                                //              _1 = 2
                                 std::tuple<tag_expr, expression >
                               , std::tuple<tag_push, expression >
                               , std::tuple<tag_placeholder, size_t >
@@ -106,12 +130,18 @@ namespace dsl_compiler{
                               , std::tuple<tag_goto_if, expression, size_t >
                               , std::tuple<tag_break >
                               , std::tuple<tag_continue >
+                                // return is just a goto with a special
+                                // operations to set the return value
+                              , std::tuple<tag_return, size_t, expression >
                         >;
 
                         struct inter_t_to_string_ : boost::static_visitor<std::string>
                         {
                                 result_type operator()(std::tuple<tag_expr, expression > const& arg)const{
                                         return str(boost::format("tag_expr(%s)") % std::get<1>(arg));
+                                }
+                                result_type operator()(std::tuple<tag_return, size_t, expression > const& arg)const{
+                                        return str(boost::format("tag_return(%s,%s)") % std::get<1>(arg) % std::get<2>(arg));
                                 }
                                 result_type operator()(std::tuple<tag_push, expression > const& arg)const{
                                         return str(boost::format("tag_push(%s)") % std::get<1>(arg));
@@ -151,9 +181,10 @@ namespace dsl_compiler{
                         }
                         void emit_push( expression const& expr){
                                 inter_.emplace_back( std::make_tuple(tag_push(), expr ) );
-                                
                         }
-                        
+                        void emit_return( expression const& expr){
+                                inter_.emplace_back( std::make_tuple(tag_return(), pctx_.map_return(), expr ) );
+                        }
                         void placeholder(size_t idx){
                                 inter_.emplace_back( std::make_tuple(
                                         tag_placeholder()
@@ -172,8 +203,12 @@ namespace dsl_compiler{
                                       , pctx_.map_continue()
                                 ));
                         }
-
-                public:
+                        void return_placeholder(){
+                                inter_.emplace_back( std::make_tuple(
+                                        tag_placeholder()
+                                      , pctx_.map_return()
+                                ));
+                        }
 
                         void begin_placeholder_context(){
                                 pctx_.push_regular();
@@ -181,9 +216,17 @@ namespace dsl_compiler{
                         void begin_breakable_placeholder_context(){
                                 pctx_.push_breakable();
                         }
+                        void begin_function_context(){
+                                pctx_.push_function();
+                        }
                         void end_placeholder_context(){
                                 pctx_.pop();
                         }
+
+                        /*
+                                The resolver_cache is in charge of mapping operations
+                                to an offset, which essentially are labels
+                        */
 
                         struct resolver_cache : boost::static_visitor<>{
                                 void operator()(std::tuple<tag_expr, expression > const& ){
@@ -193,6 +236,7 @@ namespace dsl_compiler{
                                         ++idx_;
                                 }
                                 void operator()(std::tuple<tag_placeholder, size_t > const& arg){
+                                        // a placeholder doesn't produce any code
                                         cache_.insert(std::make_pair(std::get<1>(arg),idx_));
                                 }
                                 void operator()(std::tuple<tag_goto, size_t> const& ){
@@ -202,6 +246,9 @@ namespace dsl_compiler{
                                         ++idx_;
                                 }
                                 void operator()(std::tuple<tag_break> const& ){
+                                        ++idx_;
+                                }
+                                void operator()(std::tuple<tag_return, size_t, expression > const& ){
                                         ++idx_;
                                 }
                                 void operator()(std::tuple<tag_continue> const& ){
@@ -237,6 +284,12 @@ namespace dsl_compiler{
                                                 tag::_push
                                               , std::get<1>( arg ) ) );
                                 }
+                                void operator()(std::tuple<tag_return, size_t, expression > const& arg){
+                                        vec_.emplace_back( std::make_tuple(
+                                                tag::_return_
+                                              , cache_[ std::get<1>(arg) ]
+                                              , std::get<2>( arg ) ) );
+                                }
                                 void operator()(std::tuple<tag_placeholder, size_t > const& ){
                                 }
                                 void operator()(std::tuple<tag_goto, size_t> const& arg){
@@ -261,8 +314,7 @@ namespace dsl_compiler{
                                 }
                         private:
                                 resolver_cache cache_;
-                                std::vector< backend_statement::impl_t > vec_;
-                        };
+                                std::vector< backend_statement::impl_t > vec_;                        };
 
                         auto compile(){
                                 resolver_cache cache;
