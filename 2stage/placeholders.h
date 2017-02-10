@@ -14,6 +14,10 @@ namespace dsl_compiler{
                 static auto _3 = placeholder< tag_dsl_compiler_placeholder_3>();
                 static auto _4 = placeholder< tag_dsl_compiler_placeholder_4>();
                 static auto _5 = placeholder< tag_dsl_compiler_placeholder_5>();
+
+                static auto _arg1 = placeholder< tag_dsl_compiler_arg<1> >();
+                static auto _arg2 = placeholder< tag_dsl_compiler_arg<2> >();
+                static auto _arg3 = placeholder< tag_dsl_compiler_arg<3> >();
         }
 }
 

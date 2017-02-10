@@ -6,6 +6,7 @@
 #include <boost/unordered_map.hpp>
 #include <typeinfo>
 #include <typeindex>
+#include <utility>
 
 #include <boost/range/algorithm.hpp>
 
@@ -15,20 +16,26 @@
 
 namespace dsl_compiler{
 
-        template<class N>
+        template<size_t N>
         struct tag_dsl_compiler_arg{};
 
 
-
-
-
         struct context{
+
+        private:
+                template<size_t Idx>
+                void push_args_(){}
+                template<size_t Idx, class Arg, class... Left>
+                void push_args_(Arg&& arg, Left&&... left){
+                        assign( boost::typeindex::type_id< tag_dsl_compiler_arg<Idx> >(), std::forward<Arg>(arg));
+                        push_args_<Idx+1>(std::forward<Left>(left)...);
+                }
+        public:
                 template<class... Args>
                 context(Args&&... args)
                         :return_(0)
                 {
-
-
+                        push_args_<1>(std::forward<Args>(args)...);
                 }
                 decltype(auto) get(boost::typeindex::type_index const& id){
                         if( m_.count( id ) == 0 ){
@@ -73,6 +80,7 @@ namespace dsl_compiler{
         private:
                 std::map<boost::typeindex::type_index,funamental_t> m_;
                 std::vector<funamental_t> stack_;
+                std::vector<funamental_t> args_;
                 funamental_t return_;
         };
 }
