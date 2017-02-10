@@ -115,16 +115,17 @@ namespace dsl_compiler{
                         }
                         template<class... Args>
                         void operator()(std::tuple<tag::return_, Args...> const& arg){
-                                ctx_.emit_return( std::get<1>(arg), std::get<2>(arg) );
+                                ctx_.emit_return( std::get<1>(arg) );
                         }
                         void debug()const{
                                 ctx_.debug();
                         }
                         template<class Stmt, class = void_t<decltype( make_stmt_impl_( std::declval<Stmt&>() ) )> >
-                        auto compile(statement const& stmt){
+                        auto compile(Stmt const& stmt){
                                 auto si{make_stmt_impl_(stmt)};
                                 ctx_.begin_function_context();
                                 boost::apply_visitor( *this , si);
+                                ctx_.return_placeholder();
                                 ctx_.end_placeholder_context();
                                 return ctx_.compile();
                         }

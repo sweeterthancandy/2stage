@@ -46,7 +46,7 @@ namespace dsl_compiler{
                 statement(std::tuple< tag::expr, expression > const& arg):impl_(arg){}
                 statement(std::tuple< tag::push, expression > const& arg):impl_(arg){}
                 statement(std::tuple< tag::return_, expression > const& arg):impl_(arg){}
-                //statement(statement_impl_t impl):impl_(std::move(impl)){}
+                explicit statement(statement_impl_t impl):impl_(std::move(impl)){}
                 statement(statement const& stmt)=default;
                 statement(statement&& stmt)=default;
 
@@ -149,16 +149,6 @@ namespace dsl_compiler{
                       , detail_::make_expr_( _expr )
                 );
         }
-        template<
-                class Expr
-              , class = void_t< decltype( detail_::make_expr_( std::declval<Expr&>() ) ) >
-        >
-        statement return_( Expr const& _expr){
-                return std::make_tuple(
-                        tag::_return_
-                      , detail_::make_expr_( _expr )
-                );
-        }
 
         template<class... Stmts
                , class = void_t< decltype( detail_::make_stmt_impl_( std::declval<Stmts&>() ) )... >
@@ -208,6 +198,18 @@ namespace dsl_compiler{
 
         static statement break_{ std::make_tuple(tag::_break_) };
         static statement continue_{ std::make_tuple(tag::_continue_) };
+
+
+        template<
+                class Expr
+              , class = void_t< decltype( detail_::make_expr_( std::declval<Expr&>() ) ) >
+        >
+        statement return_( Expr const& expr){
+                return statement{std::make_tuple(
+                        tag::_return_
+                      , detail_::make_expr_( expr )
+                )};
+        }
 
         template<
                 class Expr

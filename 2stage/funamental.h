@@ -14,6 +14,14 @@
 
 namespace dsl_compiler{
 
+
+        /*
+                funamental_t is the atomic datatype, nothing is smaller than an funamental_t
+
+
+
+        */
+
         namespace mpl = boost::mpl;
 
         namespace detail_{

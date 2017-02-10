@@ -35,6 +35,7 @@ namespace dsl_compiler{
                 void set_return(funamental_t const& val){
                         return_ = val;
                 }
+                int get_return()const{ return return_; }
                 void debug()const{
                         std::cout << "{";
                         boost::for_each( m_, [&](auto&& p){ 
@@ -55,7 +56,6 @@ namespace dsl_compiler{
                 void push_scope(){}
                 void pop_scope(){}
 
-                int get_return()const{ return return_; }
         private:
                 std::map<boost::typeindex::type_index,funamental_t> m_;
                 std::vector<funamental_t> stack_;

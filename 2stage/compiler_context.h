@@ -203,8 +203,12 @@ namespace dsl_compiler{
                                       , pctx_.map_continue()
                                 ));
                         }
-
-                public:
+                        void return_placeholder(){
+                                inter_.emplace_back( std::make_tuple(
+                                        tag_placeholder()
+                                      , pctx_.map_return()
+                                ));
+                        }
 
                         void begin_placeholder_context(){
                                 pctx_.push_regular();

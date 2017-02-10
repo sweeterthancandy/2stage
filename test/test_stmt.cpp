@@ -222,6 +222,16 @@ namespace{
                 assert_eq( _2, 2 );
                 assert_eq( _3, 3 );
         }
-
+        
+        TEST_F( StmtTest, return_ ){
+                auto stmt = stmts( _1 = 3, _2 = 2, return_(_1), _2 = 1 );
+                auto prog = compile(stmt);
+                prog.execute(ctx);
+                prog.debug();
+                auto ret = ctx.get_return();
+                assert_eq( _1, 3 );
+                assert_eq( _2, 2 );
+                ASSERT_EQ( 3, static_cast<size_t>(ret) );
+        }
 
 }
