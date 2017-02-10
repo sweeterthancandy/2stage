@@ -12,46 +12,41 @@ namespace{
         using ImbueTest = BasicCtxFixture<struct tag_test_dsl>;
 
         TEST_F(ImbueTest, simple){
-                ASSERT_EQ( 0, static_cast<int>(( return_(0) )()));
-                auto ret = if_( true_ )
+
+                ASSERT_EQ( 0, (int)return_(0)() );
+
+                auto prog = if_( true_ )
                            [
                                 return_(12)
                            ]
                            .else_
                            [
                                 return_(23)
-                           ]
-                           ();
-                ASSERT_EQ( 12,static_cast<int>(ret));
+                           ];
+                ASSERT_EQ( 12, (int)prog(12) );
         }
         
         TEST_F(ImbueTest, loop){
-                auto ret =
-                        (_2 = 1,
+                auto prog = (
+                        _2 = 1,
                         for_( _1 = 0, _1 != 10, _1+=1)
                         [
                                 _2 *= 2
                         ],
                         return_(_2)
-                        )();
-                ASSERT_EQ( 1024,static_cast<int>(ret));
+                        );
+                ASSERT_EQ( 1024, (int)prog());
         }
         
-        TEST_F(ImbueTest, args_identity){
-                auto ret = 
-                        (
-                                return_( _arg1 )
-                        )(24);
-                ASSERT_EQ( 24,static_cast<int>(ret));
+        TEST_F(ImbueTest, args){
+                ASSERT_EQ( 24, (int)return_(_arg1)(24) );
+                ASSERT_EQ( 19, (int)return_(_arg1)(24 - 5) );
+                ASSERT_TRUE( (int)return_( _arg1 == _arg2)(12,12) );
+                ASSERT_FALSE( (int)return_( _arg1 == _arg2)(12,-1) );
+
+                EXPECT_ANY_THROW( return_(_arg1)() );
         }
         
-        TEST_F(ImbueTest, args_single){
-                auto ret = 
-                        (
-                                return_( _arg1 + 1 )
-                        )(24);
-                ASSERT_EQ( 25,static_cast<int>(ret));
-        }
         TEST_F(ImbueTest, args_multiple){
                 auto prog = 
                                 if_( _arg1 % 2 == 0 )
@@ -62,6 +57,6 @@ namespace{
                                 [
                                         return_(false_)
                                 ];
-                ASSERT_TRUE(  static_cast<bool>(prog(0)));
+                ASSERT_TRUE( (int)prog(0) );
         }
 }
